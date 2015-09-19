@@ -16,6 +16,9 @@ function onSetControlSignals(result) {
 };
 
 function changeSignals() {
+  if(!checkConnection()){
+    return;
+  }
   chrome.serial.setControlSignals(connectionId,
                                   { dtr: dtr, rts: rts },
                                   onSetControlSignals);
@@ -50,6 +53,9 @@ function updatePauseButton(){
 }
 
 function togglePause(){
+  if(!checkConnection()){
+    return;
+  }
   if(paused){
     addEvent('Resuming Connection');
     chrome.serial.setPaused(connectionId, false, function(){
@@ -73,6 +79,9 @@ function togglePause(){
 }
 
 function toggleBreak(){
+  if(!checkConnection()){
+    return;
+  }
   if(breakState){
     addEvent('Clearing Break...');
     chrome.serial.clearBreak(connectionId, function(result){
@@ -190,13 +199,21 @@ function openSelectedPort() {
 }
 
 function addEvent(text){
+  if(receiveBuffer.length > 0){
+    eventList.push('Received: ' + receiveBuffer);
+    receiveBuffer = '';
+  }
   console.log('Event: ', text);
   eventList.push(text);
   updateEventText();
 }
 
 function updateEventText() {
-  eventPre.innerHTML = eventList.join('\n');
+  var text = eventList.join('\n');
+  if(receiveBuffer.length > 0){
+    text = text + '\nReceived: ' + receiveBuffer;
+  }
+  eventPre.innerHTML = text;
   eventPre.scrollTop = eventPre.scrollHeight;
 }
 
@@ -265,14 +282,14 @@ onload = function() {
     for(ix=0;ix<data.length;ix++){
       if(data[ix] === 10 || data[ix] === 13){
         if(receiveBuffer.length > 0){
-          addEvent('Received: ' + receiveBuffer);
+          eventList.push('Received: ' + receiveBuffer);
           receiveBuffer = '';
+          updateEventText();
         }
       }else{
         receiveBuffer += String.fromCharCode(data[ix]);
       }
     }
-    console.log('data', data, receiveBuffer);
   });
 
   chrome.serial.onReceiveError.addListener(function(error){

@@ -1,16 +1,18 @@
 void serialBreak(int millis){
   Serial.println("Breaking...");
+  delay(100);
   Serial.end();
   pinMode(1, OUTPUT);
   digitalWrite(1, LOW);
   delay(millis);
   digitalWrite(1, HIGH);
   Serial.begin(9600);
-  Serial.println("\nBreak Finished");
+  Serial.println("Break Finished");
 }
 
 void serialPseudoFramingError(){
   Serial.println("Generating Framing Error...");
+  delay(100);
   Serial.end();
   pinMode(1, OUTPUT);
   for(int ix=0;ix<45;ix++){
@@ -20,12 +22,10 @@ void serialPseudoFramingError(){
     delayMicroseconds(50);
   }
   Serial.begin(9600);
-  Serial.println("");
   Serial.println("Framing Error Finished");
 }
 
 void setup() {
-  pinMode(13, OUTPUT);
   Serial.begin(9600);
 }
 
@@ -38,12 +38,6 @@ void loop() {
       break;
     case 66:
       serialBreak(2000);
-      break;
-    case 67:
-      Serial.println("Flashing");
-      digitalWrite(13, HIGH);
-      delay(1000);
-      digitalWrite(13, LOW);
       break;
     case 68:
       serialPseudoFramingError();
