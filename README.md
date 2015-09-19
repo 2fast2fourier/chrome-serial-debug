@@ -1,16 +1,7 @@
-<a target="_blank" href="https://chrome.google.com/webstore/detail/gmlopmidlcfikepbnklkochchhehjpak">![Try it now in CWS](https://raw.github.com/GoogleChrome/chrome-app-samples/master/tryitnowbutton.png "Click here to install this sample from the Chrome Web Store")</a>
+# Serial Debug Toolset
 
+This sample project exposes a simple interface to debug serial issues resulting from remote Framing Errors and control signals.
 
-# Serial Control Signals
+This has been forked from the [Chrome App Samples](https://github.com/GoogleChrome/chrome-app-samples) [serial-control-signals](https://github.com/GoogleChrome/chrome-app-samples/tree/master/samples/serial-control-signals) example.
 
-This sample demonstrates how you can send and receive control signals (DTR, RTS, DCD and CTS) to/from a serial port.
-
-## APIs
-
-* [Serial API](http://developer.chrome.com/apps/app.hardware.html#serial)
-* [Runtime](http://developer.chrome.com/apps/app.runtime.html)
-* [Window](http://developer.chrome.com/apps/app.window.html)
-     
-## Screenshot
-![screenshot](/samples/serial-control-signals/assets/screenshot_1280_800.png)
-
+To use the `Remote Break` and `Remote Frame Error` triggers, you will need to use an Arduino that has a FTDI USB-serial interface. Program the sketch in the `serial-break` folder and connect to the device with this app. NOTE: If you use an Arduino that has an Atmel chip for the USB-Serial interface, it will not forward framing errors or break condition to the OS.

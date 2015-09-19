@@ -4,15 +4,15 @@ var e_monitor, dtr, rts;
 
 var interval = false;
 var paused = false;
+var breakState = false;
 
-var disconnectBtn, pauseBtn;
+var disconnectBtn, pauseBtn, breakBtn;
 var eventPre;
 var eventList = [];
 var receiveBuffer = '';
 
 function onSetControlSignals(result) {
-  checkError();
-  console.log("onSetControlSignals: " + result);
+  checkError(!result, 'serial.setControlSignals', result);
 };
 
 function changeSignals() {
@@ -72,6 +72,28 @@ function togglePause(){
   }
 }
 
+function toggleBreak(){
+  if(breakState){
+    addEvent('Clearing Break...');
+    chrome.serial.clearBreak(connectionId, function(result){
+      if(!checkError(!result, 'serial.clearBreak', result)){
+        addEvent('Cleared Break.')
+        breakState = false;
+        breakBtn.value = 'SetBreak';
+      }
+    });
+  }else{
+    addEvent('Setting Break...');
+    chrome.serial.setBreak(connectionId, function(result){
+      if(!checkError(!result, 'serial.setBreak', result)){
+        addEvent('Set Break.')
+        breakState = true;
+        breakBtn.value = 'ClearBreak';
+      }
+    });
+  }
+}
+
 function onGetControlSignals(signals) {
   if(!checkError()){
     addEvent('DCD: '+signals.dcd+' CTS: '+signals.cts+' RI: '+signals.ri+' DSR: '+signals.dsr)
@@ -115,6 +137,7 @@ function onConnect(connectionInfo) {
   }
   connectionId = connectionInfo.connectionId;
   setStatus('Connected');
+  addEvent('Connected');
 
   disconnectBtn.value = 'Disconnect';
 
@@ -211,8 +234,8 @@ onload = function() {
 
   eventPre = document.getElementById('events');
 
-  var breakBtn = document.getElementById('break_btn');
-  breakBtn.addEventListener('click', triggerBreak, false);
+  var brkBtn = document.getElementById('break_btn');
+  brkBtn.addEventListener('click', triggerBreak, false);
 
   var frameBtn = document.getElementById('frame_btn');
   frameBtn.addEventListener('click', triggerFrame, false);
@@ -228,6 +251,9 @@ onload = function() {
 
   pauseBtn = document.getElementById('pause_btn');
   pauseBtn.addEventListener('click', togglePause, false);
+
+  breakBtn = document.getElementById('set_break_btn');
+  breakBtn.addEventListener('click', toggleBreak, false);
 
   chrome.serial.getDevices(function(devices) {
     buildPortPicker(devices)
