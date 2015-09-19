@@ -1,0 +1,11 @@
+body {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 13px;
+}
+
+.events {
+  height: 200px;
+  overflow: auto;
+  border: 1px solid black;
+  padding: 5px;
+}
