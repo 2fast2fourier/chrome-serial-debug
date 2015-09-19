@@ -1,20 +1,12 @@
 void serialBreak(int millis){
   Serial.println("Breaking...");
-//  Serial.end();
-//  pinMode(1, OUTPUT);
-//  digitalWrite(1, LOW);
-  delay(10);
-//  digitalWrite(1, HIGH);
-//  Serial.begin(9600);
   Serial.end();
-  Serial.begin(100);
-  Serial.write(0);
-  Serial.write(0);
-  Serial.write(0);
-  Serial.end();
+  pinMode(1, OUTPUT);
+  digitalWrite(1, LOW);
+  delay(millis);
+  digitalWrite(1, HIGH);
   Serial.begin(9600);
-  Serial.println("");
-  Serial.println("Break Finished");
+  Serial.println("\nBreak Finished");
 }
 
 void serialPseudoFramingError(){
@@ -45,7 +37,7 @@ void loop() {
       Serial.println("Pong");
       break;
     case 66:
-      serialBreak(1000);
+      serialBreak(2000);
       break;
     case 67:
       Serial.println("Flashing");

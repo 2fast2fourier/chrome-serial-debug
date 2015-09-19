@@ -1,10 +1,11 @@
 var connectionId = -1;
-var e_dtr, e_rts, e_dcd, e_cts, e_ri, e_dsr;
-var dtr, rts;
+var e_dtr, e_rts;
+var e_monitor, dtr, rts;
 
 var interval = false;
+var paused = false;
 
-var disconnectBtn;
+var disconnectBtn, pauseBtn;
 var eventPre;
 var eventList = [];
 var receiveBuffer = '';
@@ -20,24 +21,90 @@ function changeSignals() {
                                   onSetControlSignals);
 }
 
-function checkError(){
+function checkError(err, name, status){
   if(chrome.runtime.lastError){
-    addEvent('Chrome Error: '+chrome.runtime.lastError.message);
+    addEvent('Chrome lastError: '+chrome.runtime.lastError.message);
+    return true;
+  }
+  if(err){
+    addEvent('Error: '+name+' returned: '+status);
+    return true;
+  }
+  return false;
+}
+
+function checkConnection(){
+  if(connectionId < 0){
+    addEvent('Not connected!');
+    return false;
+  }
+  return true;
+}
+
+function updatePauseButton(){
+  if(paused){
+    pauseBtn.value = 'Unpause';
+  }else{
+    pauseBtn.value = 'Pause';
+  }
+}
+
+function togglePause(){
+  if(paused){
+    addEvent('Resuming Connection');
+    chrome.serial.setPaused(connectionId, false, function(){
+      checkError();
+      chrome.serial.getInfo(connectionId, function(info){
+        checkError();
+        if(info.paused){
+          addEvent('Error: Connection is still paused!');
+        }
+        paused = info.paused;
+        updatePauseButton();
+      });
+    });
+  }else{
+    chrome.serial.setPaused(connectionId, true, function(){
+      checkError();
+      addEvent('Paused Connection');
+      getInfo();
+    });
   }
 }
 
 function onGetControlSignals(signals) {
-  checkError();
-  e_dcd.innerText = signals.dcd;
-  e_cts.innerText = signals.cts;
-  e_ri.innerText = signals.ri;
-  e_dsr.innerText = signals.dsr;
+  if(!checkError()){
+    addEvent('DCD: '+signals.dcd+' CTS: '+signals.cts+' RI: '+signals.ri+' DSR: '+signals.dsr)
+  }
 }
 
 function readSignals() {
   if(connectionId >= 0){
     chrome.serial.getControlSignals(connectionId, onGetControlSignals);
   }
+}
+
+function send(code, preMessage){
+  if(!checkConnection()){
+    return;
+  }
+  if(preMessage){
+    addEvent(preMessage);
+  }
+  chrome.serial.send(connectionId, new Uint8Array([code]).buffer, function(res){
+    checkError(res.error, 'serial.send', res.error);
+  });
+}
+
+function getInfo(){
+  chrome.serial.getInfo(connectionId, function(info){
+    checkError();
+    if(!paused && info.paused){
+      addEvent('Connection has Paused');
+    }
+    paused = info.paused;
+    updatePauseButton();
+  });
 }
 
 function onConnect(connectionInfo) {
@@ -54,8 +121,7 @@ function onConnect(connectionInfo) {
   dtr = false;
   rts = false;
   changeSignals();
-
-  interval = setInterval(readSignals, 1000);
+  getInfo();
 };
 
 function setStatus(status) {
@@ -76,7 +142,6 @@ function buildPortPicker(ports) {
 
   portPicker.onchange = function() {
     if (connectionId != -1) {
-      clearInterval(interval);
       chrome.serial.disconnect(connectionId, openSelectedPort);
       return;
     }
@@ -86,10 +151,8 @@ function buildPortPicker(ports) {
 
 function disconnect(callback){
   if (connectionId != -1) {
-    clearInterval(interval);
     chrome.serial.disconnect(connectionId, function(){
       checkError();
-      clearInterval(interval);
       connectionId = -1;
       disconnectBtn.value = 'Connect';
       addEvent('Disconnected');
@@ -115,28 +178,15 @@ function updateEventText() {
 }
 
 function triggerBreak(){
-  if(connectionId < 0){
-    addEvent('Not connected!');
-    return;
-  }
-  addEvent('Triggering Break');
-  chrome.serial.send(connectionId, new Uint8Array([66]).buffer, function(){
-    checkError();
-    console.log('sent break');
-  });
+  send(66, 'Triggering Remote Break');
 }
 
 function triggerFrame() {
-  if(connectionId < 0){
-    addEvent('Not connected!');
-    return;
-  }
-  addEvent('Triggering Framing Error');
-  updateEventText();
-  chrome.serial.send(connectionId, new Uint8Array([68]).buffer, function(){
-    checkError();
-    console.log('sent frame');
-  });
+  send(68, 'Triggering Remote Framing Error');
+}
+
+function sendPing() {
+  send(65, 'Sending Ping...');
 }
 
 function toggleConnection(){
@@ -159,11 +209,6 @@ onload = function() {
     changeSignals();
   }
 
-  e_dcd = document.getElementById('dcd_status');
-  e_cts = document.getElementById('cts_status');
-  e_ri = document.getElementById('ri_status');
-  e_dsr = document.getElementById('dsr_status');
-
   eventPre = document.getElementById('events');
 
   var breakBtn = document.getElementById('break_btn');
@@ -172,8 +217,17 @@ onload = function() {
   var frameBtn = document.getElementById('frame_btn');
   frameBtn.addEventListener('click', triggerFrame, false);
 
+  var readSignalBtn = document.getElementById('read_signals_btn');
+  readSignalBtn.addEventListener('click', readSignals, false);
+
+  var pingBtn = document.getElementById('ping_btn');
+  pingBtn.addEventListener('click', sendPing, false);
+
   disconnectBtn = document.getElementById('disconnect_btn');
   disconnectBtn.addEventListener('click', toggleConnection, false);
+
+  pauseBtn = document.getElementById('pause_btn');
+  pauseBtn.addEventListener('click', togglePause, false);
 
   chrome.serial.getDevices(function(devices) {
     buildPortPicker(devices)
@@ -197,6 +251,7 @@ onload = function() {
 
   chrome.serial.onReceiveError.addListener(function(error){
     addEvent('Serial onReceiveError: '+error.error);
+    getInfo();
   });
 
   updateEventText();
