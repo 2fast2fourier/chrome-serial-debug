@@ -202,6 +202,7 @@ function disconnect(callback){
       dtr = false;
       rts = false;
       addEvent('Disconnected');
+      setStatus('Disconnected');
       updateUI();
     });
   }

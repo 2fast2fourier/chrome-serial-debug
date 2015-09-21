@@ -1,3 +1,10 @@
+// This sketch for use with the Chrome Serial Debug app to provide
+// remote serial device functionality.
+// This can be used with any Arduino that has an FTDI USB-Serial chip.
+
+// NOTE: Some Arduino units have an Atmel USB-Serial interface that will not
+// recognize break condition or framing errors.
+
 void serialBreak(int millis){
   Serial.println("Breaking...");
   delay(100);
@@ -37,7 +44,7 @@ void loop() {
       Serial.println("Pong");
       break;
     case 66:
-      serialBreak(2000);
+      serialBreak(1000);
       break;
     case 68:
       serialPseudoFramingError();
