@@ -44,11 +44,21 @@ function checkConnection(){
   return true;
 }
 
-function updatePauseButton(){
+function updateUI(){
   if(paused){
     pauseBtn.value = 'Unpause';
   }else{
     pauseBtn.value = 'Pause';
+  }
+  if(breakState){
+    breakBtn.value = 'ClearBreak';
+  }else{
+    breakBtn.value = 'SetBreak';
+  }
+  if(connectionId >= 0){
+    disconnectBtn.value = 'Disconnect';
+  }else{
+    disconnectBtn.value = 'Connect';
   }
 }
 
@@ -66,7 +76,7 @@ function togglePause(){
           addEvent('Error: Connection is still paused!');
         }
         paused = info.paused;
-        updatePauseButton();
+        updateUI();
       });
     });
   }else{
@@ -88,7 +98,7 @@ function toggleBreak(){
       if(!checkError(!result, 'serial.clearBreak', result)){
         addEvent('Cleared Break.')
         breakState = false;
-        breakBtn.value = 'SetBreak';
+        updateUI();
       }
     });
   }else{
@@ -97,7 +107,7 @@ function toggleBreak(){
       if(!checkError(!result, 'serial.setBreak', result)){
         addEvent('Set Break.')
         breakState = true;
-        breakBtn.value = 'ClearBreak';
+        updateUI();
       }
     });
   }
@@ -134,7 +144,7 @@ function getInfo(){
       addEvent('Connection has Paused');
     }
     paused = info.paused;
-    updatePauseButton();
+    updateUI();
   });
 }
 
@@ -148,10 +158,11 @@ function onConnect(connectionInfo) {
   setStatus('Connected');
   addEvent('Connected');
 
-  disconnectBtn.value = 'Disconnect';
-
   dtr = false;
   rts = false;
+  breakState = false;
+  paused = false;
+
   changeSignals();
   getInfo();
 };
@@ -186,8 +197,12 @@ function disconnect(callback){
     chrome.serial.disconnect(connectionId, function(){
       checkError();
       connectionId = -1;
-      disconnectBtn.value = 'Connect';
+      paused = false;
+      breakState = false;
+      dtr = false;
+      rts = false;
       addEvent('Disconnected');
+      updateUI();
     });
   }
 }

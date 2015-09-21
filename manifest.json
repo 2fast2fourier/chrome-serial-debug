@@ -1,9 +1,9 @@
 {
-  "name": "Serial Control Signals",
-  "version": "0.2",
+  "name": "Chrome Serial Debug",
+  "version": "0.1",
   "manifest_version": 2,
   "minimum_chrome_version": "23",
-  "description": "Test serial control signal API.",
+  "description": "Debug serial API.",
 
   "app": {
     "background": {
